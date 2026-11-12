@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#2f5bea">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<title>বাংলা ⇄ Русский</title>
+<style>
+:root{--bg:#f6f7fb;--card:#fff;--tx:#14161f;--mut:#6a7086;--ac:#2f5bea;--acx:#fff;--bd:#dfe3ee;--ok:#12805c}
+@media (prefers-color-scheme:dark){:root{--bg:#0f1117;--card:#181b25;--tx:#eceef6;--mut:#9aa1b8;--ac:#6f8cff;--acx:#0b0d14;--bd:#2a2f40;--ok:#4cd6a3;color-scheme:dark}}
+*{box-sizing:border-box}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--tx);font-family:system-ui,-apple-system,"Segoe UI",Roboto,"Noto Sans Bengali","Noto Sans",sans-serif;line-height:1.5;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+main{max-width:560px;margin:0 auto;padding:16px 14px 40px}
+h1{font-size:1.25rem;margin:4px 0 14px;font-weight:700}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:16px;padding:12px 14px;margin-bottom:12px}
+.lbl{font-size:.8rem;color:var(--mut);margin-bottom:6px;font-weight:600}
+.seg{display:flex;gap:6px}
+.seg button{flex:1;padding:10px 6px;border:1px solid var(--bd);background:transparent;color:var(--tx);border-radius:12px;font:inherit;font-size:.92rem;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--ac);color:var(--acx);border-color:var(--ac);font-weight:700}
+.row+.row{margin-top:12px}
+textarea,input{width:100%;border:1px solid var(--bd);background:var(--bg);color:var(--tx);border-radius:12px;padding:10px;font:inherit;font-size:1rem}
+textarea{min-height:130px;resize:vertical}
+input[type=time]{margin-top:8px}
+.go{width:100%;padding:14px;border:0;border-radius:14px;background:var(--ac);color:var(--acx);font:inherit;font-weight:700;font-size:1.05rem;cursor:pointer}
+.go:disabled{opacity:.6}
+.sm{margin-top:8px;padding:9px 14px;border:1px solid var(--bd);background:transparent;color:var(--tx);border-radius:10px;font:inherit;font-size:.85rem;cursor:pointer}
+.sm.done{color:var(--ok);border-color:var(--ok)}
+.out{white-space:pre-wrap;word-wrap:break-word;font-size:1.05rem}
+.big{font-size:1.15rem;font-weight:600}
+.err{color:#d6455d;font-size:.9rem;white-space:pre-wrap;word-break:break-word}
+.note{font-size:.85rem;color:var(--mut)}
+details summary{cursor:pointer;font-weight:600}
+details .row{margin-top:10px}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+<main>
+  <h1>বাংলা ⇄ Русский অনুবাদক</h1>
+
+  <details class="card" id="set">
+    <summary>⚙️ সেটিংস (Gemini API key)</summary>
+    <div class="row"><div class="lbl">API key (শুধু এই ফোনে সেভ থাকবে)</div>
+      <input type="password" id="key" placeholder="AIza..." autocomplete="off"></div>
+    <div class="row"><div class="lbl">মডেল (না বুঝলে যা আছে তাই রাখো)</div>
+      <input type="text" id="mdl" placeholder="gemini-2.5-flash" autocomplete="off"></div>
+    <button class="sm" id="saveSet">সেভ করো</button>
+  </details>
+
+  <div class="card">
+    <div class="seg" data-k="mode">
+      <button data-v="bn2ru">বাংলা → Русский</button>
+      <button data-v="ru2bn">Русский → বাংলা + English</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="row"><div class="lbl">আমি (যে মেসেজ করছি)</div>
+      <div class="seg" data-k="me"><button data-v="male">👨 ছেলে</button><button data-v="female">👩 মেয়ে</button></div></div>
+    <div class="row"><div class="lbl" id="toLbl">যাকে মেসেজ করছি</div>
+      <div class="seg" data-k="to"><button data-v="male">👨 ছেলে</button><button data-v="female">👩 মেয়ে</button></div></div>
+    <div class="row" id="relRow"><div class="lbl">সম্পর্ক</div>
+      <div class="seg" data-k="rel"><button data-v="respected">🙏 সম্মানীয়</button><button data-v="friend">🤝 বন্ধু</button><button data-v="random">👤 অপরিচিত</button></div></div>
+    <div class="row" id="timeRow"><div class="lbl">⏰ সময় (শুভেচ্ছা যোগ হবে, যার কাছে যাচ্ছে তার সময় ধরে)</div>
+      <div class="seg" data-k="time"><button data-v="none">দরকার নেই</button><button data-v="now">এখনকার সময়</button><button data-v="custom">সময় দিব</button></div>
+      <input type="time" id="tv" hidden></div>
+  </div>
+
+  <div class="card">
+    <div class="lbl" id="srcLbl">বাংলা মেসেজ লিখো</div>
+    <textarea id="src"></textarea>
+  </div>
+
+  <button class="go" id="go">অনুবাদ করো</button>
+  <p class="err" id="err" hidden></p>
+
+  <div id="res" hidden style="margin-top:12px">
+    <div class="card"><div class="lbl" id="l1"></div><div class="out" id="o1"></div><button class="sm" data-t="o1">কপি</button></div>
+    <div class="card"><div class="lbl" id="l2"></div><div class="out big" id="o2"></div><button class="sm" data-t="o2">কপি</button></div>
+    <div class="card" id="nbox" hidden><div class="lbl">📝 নোট</div><div class="note" id="nt"></div></div>
+  </div>
+</main>
+
+<script>
+(function(){
+  var $=function(i){return document.getElementById(i)};
+  var S={mode:"bn2ru",me:"male",to:"female",rel:"friend",time:"none"};
+  var KEY="",MODEL="gemini-2.5-flash";
+  try{var s=JSON.parse(localStorage.getItem("bnru_s")||"null");if(s)S=Object.assign(S,s);}catch(e){}
+  try{KEY=localStorage.getItem("bnru_key")||"";MODEL=localStorage.getItem("bnru_model")||MODEL;}catch(e){}
+  $("key").value=KEY;$("mdl").value=MODEL;
+  if(!KEY)$("set").open=true;
+
+  function save(){try{localStorage.setItem("bnru_s",JSON.stringify(S));}catch(e){}}
+  function paint(){
+    document.querySelectorAll(".seg").forEach(function(g){
+      g.querySelectorAll("button").forEach(function(b){b.setAttribute("aria-pressed",String(S[g.dataset.k]===b.dataset.v));});
+    });
+    var fw=S.mode==="bn2ru";
+    $("relRow").hidden=!fw;$("timeRow").hidden=!fw;$("tv").hidden=!(fw&&S.time==="custom");
+    $("toLbl").textContent=fw?"যাকে মেসেজ করছি":"যে মেসেজ পাঠিয়েছে";
+    $("srcLbl").textContent=fw?"বাংলা মেসেজ লিখো":"রাশিয়ান মেসেজ পেস্ট করো";
+    $("src").placeholder=fw?"এখানে বাংলায় লিখো…":"Вставьте сообщение здесь…";
+  }
+  document.querySelectorAll(".seg button").forEach(function(b){
+    b.addEventListener("click",function(){
+      var k=b.parentNode.dataset.k;
+      if(k==="mode"&&S.mode!==b.dataset.v)$("res").hidden=true;
+      S[k]=b.dataset.v;paint();save();
+    });
+  });
+  paint();
+
+  $("saveSet").addEventListener("click",function(){
+    KEY=$("key").value.trim();MODEL=$("mdl").value.trim()||"gemini-2.5-flash";
+    try{localStorage.setItem("bnru_key",KEY);localStorage.setItem("bnru_model",MODEL);}catch(e){}
+    var b=$("saveSet");b.textContent="✓ সেভ হয়েছে";b.classList.add("done");
+    setTimeout(function(){b.textContent="সেভ করো";b.classList.remove("done");if(KEY)$("set").open=false;},1200);
+  });
+
+  var G={male:"male (পুরুষ)",female:"female (নারী)"};
+  var R={
+    respected:"respected person / elder / superior: very polite formal register, 'Вы' (capitalised), honorific tone, no slang.",
+    friend:"friend: informal, warm, natural register, 'ты', casual but not rude.",
+    random:"stranger / random person: neutral polite register, 'Вы' (capitalised), courteous, not overly familiar."
+  };
+  function timeStr(){
+    if(S.time==="now"){var d=new Date();return ("0"+d.getHours()).slice(-2)+":"+("0"+d.getMinutes()).slice(-2);}
+    if(S.time==="custom"&&$("tv").value)return $("tv").value;
+    return "";
+  }
+  function pFwd(text,t){
+    var tr=t?
+      "\n- The recipient's local time is "+t+" (24h). Start the message with a fitting greeting for that time, matching the register (e.g. Доброе утро / Добрый день / Добрый вечер / Доброй ночи; casual for friends, polite for others). Add the matching Bengali greeting (শুভ সকাল / শুভ দুপুর / শুভ বিকেল / শুভ সন্ধ্যা / শুভ রাত্রি) at the start of the polished Bengali too. If the message already starts with a greeting, do not duplicate it."
+      :"\n- No time given: do not add any time-based greeting.";
+    return "You are an expert Bengali-to-Russian translator for chat messages.\n"+
+    "Context:\n- Sender (writing) gender: "+G[S.me]+"\n- Recipient gender: "+G[S.to]+"\n- Relationship / register: "+R[S.rel]+tr+"\n\n"+
+    "Steps:\n1. Rewrite the Bengali message to be clean, well-organised and natural (fix spelling, grammar, punctuation, word order; keep meaning and tone; add no new facts apart from the greeting).\n"+
+    "2. Translate that polished message into natural, native-sounding Russian.\n\n"+
+    "Russian rules: use correct grammatical gender for the sender in past-tense verbs, short adjectives and participles about themselves ("+(S.me==="male"?"я сделал, я рад":"я сделала, я рада")+"). Use correct "+(S.to==="male"?"masculine":"feminine")+" agreement when addressing the recipient. Follow the register strictly (Вы vs ты). Natural messaging Russian, not word-for-word. No emoji unless the original has them.\n\n"+
+    "Return ONLY valid JSON, no markdown:\n"+
+    '{"out1":"<polished Bengali>","out2":"<Russian>","note":"<one short Bengali sentence on any important choice, or empty string>"}\n\nBengali message:\n'+text;
+  }
+  function pRev(text){
+    return "You are an expert Russian-to-Bengali and Russian-to-English translator for chat messages.\n"+
+    "Context: the message was written by a "+G[S.to]+" person to a "+G[S.me]+" person (me). Use this to read gender-marked words and pronouns correctly, and respect the tone (formal Вы vs informal ты) in your wording.\n\n"+
+    "Translate the Russian message into (1) natural, easy Bengali and (2) natural English. Keep the meaning and tone; not word-for-word; keep names and numbers unchanged.\n\n"+
+    "Return ONLY valid JSON, no markdown:\n"+
+    '{"out1":"<Bengali translation>","out2":"<English translation>","note":"<one short Bengali sentence on slang, tone, formality or ambiguity worth knowing, or empty string>"}\n\nRussian message:\n'+text;
+  }
+
+  async function call(model,prompt,viaQuery){
+    var url="https://generativelanguage.googleapis.com/v1beta/models/"+encodeURIComponent(model)+":generateContent"+(viaQuery?"?key="+encodeURIComponent(KEY):"");
+    var h={"Content-Type":"application/json"};
+    if(!viaQuery)h["x-goog-api-key"]=KEY;
+    var gc={temperature:0.3,responseMimeType:"application/json"};
+    if(/2\.5-flash$/.test(model))gc.thinkingConfig={thinkingBudget:0};
+    var ctl=new AbortController(),tm=setTimeout(function(){ctl.abort();},30000);
+    try{
+      return await fetch(url,{method:"POST",headers:h,signal:ctl.signal,
+        body:JSON.stringify({contents:[{role:"user",parts:[{text:prompt}]}],generationConfig:gc})});
+    }finally{clearTimeout(tm);}
+  }
+  async function gemini(prompt){
+    var models=[MODEL,"gemini-2.5-flash","gemini-flash-latest","gemini-2.5-flash-lite"].filter(function(m,i,a){return m&&a.indexOf(m)===i;});
+    var last=null;
+    for(var i=0;i<models.length;i++){
+      var r;
+      try{r=await call(models[i],prompt,false);}
+      catch(e){throw {code:(e&&e.name==="AbortError")?"timeout":"net",msg:String(e&&e.message||e)};}
+      if(r.status===401||r.status===403){
+        try{var r2=await call(models[i],prompt,true);if(r2.ok||r2.status!==401)r=r2;}catch(e){}
+      }
+      if(!r.ok){
+        var msg="";
+        try{var j=await r.json();msg=(j.error&&j.error.message)||"";}catch(e){}
+        var e1={status:r.status,msg:msg,code:r.status===429?"rate":(r.status===400||r.status===401||r.status===403)?"key":r.status===404?"model":(r.status>=500)?"busy":"other"};
+        if(r.status===404){last=e1;continue;}
+        throw e1;
+      }
+      var d=await r.json();
+      var t=d.candidates&&d.candidates[0]&&d.candidates[0].content&&d.candidates[0].content.parts&&d.candidates[0].content.parts[0].text||"";
+      t=t.replace(/```json|```/g,"").trim();
+      try{return JSON.parse(t);}catch(e){throw {code:"parse",msg:t.slice(0,120)};}
+    }
+    throw last||{code:"other"};
+  }
+
+  var go=$("go"),err=$("err");
+  function show(m){err.textContent=m;err.hidden=!m;}
+  go.addEventListener("click",async function(){
+    var text=$("src").value.trim();
+    if(!KEY){$("set").open=true;show("আগে সেটিংসে API key দাও।");return;}
+    if(!text){show("আগে মেসেজ লিখো।");return;}
+    var fw=S.mode==="bn2ru",t=fw?timeStr():"";
+    if(fw&&S.time==="custom"&&!t){show("সময়টা দাও।");return;}
+    show("");go.disabled=true;go.textContent="অনুবাদ হচ্ছে…";
+    try{
+      var out=await gemini(fw?pFwd(text,t):pRev(text));
+      $("l1").textContent=fw?"✍️ গুছানো বাংলা":"🇧🇩 বাংলা";
+      $("l2").textContent=fw?"🇷🇺 Русский":"🇬🇧 English";
+      $("o1").textContent=out.out1||"";$("o2").textContent=out.out2||"";
+      var n=(out.note||"").trim();$("nt").textContent=n;$("nbox").hidden=!n;
+      $("res").hidden=false;$("res").scrollIntoView({behavior:"smooth",block:"start"});
+    }catch(e){
+      var c=e&&e.code;
+      var m=c==="key"?"API key ঠিক নেই বা কাজ করছে না। সেটিংসে নতুন key দিয়ে সেভ করো."
+        :c==="rate"?"ফ্রি লিমিট শেষ, একটু পরে চেষ্টা করো."
+        :c==="model"?"মডেলের নাম ঠিক নেই। সেটিংসে gemini-2.5-flash দাও."
+        :c==="busy"?"Google সার্ভার ব্যস্ত, একটু পরে আবার চেষ্টা করো."
+        :c==="timeout"?"৩০ সেকেন্ডেও উত্তর আসেনি। ইন্টারনেট চেক করে আবার চেষ্টা করো."
+        :c==="net"?"ইন্টারনেট বা নেটওয়ার্কে সমস্যা।"
+        :c==="parse"?"উত্তর পড়া যায়নি, আবার চেষ্টা করো."
+        :"সমস্যা হয়েছে, আবার চেষ্টা করো.";
+      var det=e&&(e.status||e.msg)?"\n["+(e.status?"HTTP "+e.status+": ":"")+String(e.msg||"").slice(0,200)+"]":"";
+      show(m+det);
+    }finally{go.disabled=false;go.textContent="অনুবাদ করো";}
+  });
+
+  document.querySelectorAll("[data-t]").forEach(function(b){
+    b.addEventListener("click",async function(){
+      var t=$(b.dataset.t).textContent;
+      try{await navigator.clipboard.writeText(t);}catch(e){
+        var ta=document.createElement("textarea");ta.value=t;document.body.appendChild(ta);ta.select();
+        try{document.execCommand("copy");}catch(e2){}ta.remove();
+      }
+      var old=b.textContent;b.textContent="✓ কপি হয়েছে";b.classList.add("done");
+      setTimeout(function(){b.textContent=old;b.classList.remove("done");},1500);
+    });
+  });
+
+  if("serviceWorker" in navigator&&location.protocol.indexOf("http")===0){navigator.serviceWorker.register("sw.js").catch(function(){});}
+})();
+</script>
+</body>
+</html>
